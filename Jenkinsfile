@@ -1,27 +1,88 @@
 pipeline {
     agent any
-    //agent none -- is used to disable global agent for the entire pipeline
-    // agent { label "linux" } -- is used to execute the whole pipeline or a specific stage on a node with a specific label
-    // agent { docker "alpine"} -- is used to execute the entire pipeline or a specific stage inside a docker container
-    // agent { dockerfile true } --Docker related directive that is used to build a docker image from an existing Dockerfile
     stages {
         stage("Build") {
-            // agent any -- execute the pipeline or a specific stage on any available agent
             steps {
                 echo "Build stage."
             }
+            post {
+                always {
+                    echo "This block always runs after this stage."
+                }
+            }
         }
         stage("Test") {
-            // agent any
             steps {
                 echo "Test stage."
             }
+            post {
+                unstable {
+                    echo "This block runs when the status of this stage is marked unstable."
+                }
+            }
         }
         stage("Release") {
-            // agent any
             steps {
                 echo "Release stage."
             }
+            post {
+                success {
+                    echo "This block runs when the stage succeeded."
+                }
+            }
+        }
+        stage("Production") {
+            input {
+                message "Ready to deploy?"
+                ok "Yes"
+                submitter "admin,admins,managers"
+                submitterParameter "SUBMITTER_USERNAME"
+
+                parameters {
+                    string(name: "DEPLOY_ENV", defaultValue: "production")
+                }
+            }
+
+            steps {
+                echo "Deploy to the ${DEPLOY_ENV} environment."
+            }
+            post {
+                success {
+                    echo "This block runs when the Production Deploy is done succeeded."
+                }
+            }
+        }
+    }
+    post {
+        always {
+            echo "This block always runs."
+        }
+        changed {
+            echo "This block runs when the current status is different than the previous one."
+        }
+        fixed {
+            echo "This block runs when the current status is success and the previous one was failed or unstable."
+        }
+        regression {
+            echo "This block runs when the current status is anything except success but the previous one was successful."
+        }
+        unstable {
+            echo "This block runs if the current status is marked unstable."
+        }
+        aborted {
+            echo "This block runs when the build process is aborted."
+        }
+        failure {
+            echo "This block runs when the build is failed."
+        }
+        success {
+            echo "This block runs when the build is succeeded."
+        }
+        unsuccessful {
+            echo "This block runs when the current status is anything except success."
+        }
+        cleanup {
+            echo "This block always runs after other conditions are evaluated."
         }
     }
 }
